@@ -101,117 +101,8 @@ If `npm run update-from-core` reports conflicts:
 2. **Open each conflicted file:**
    Look for conflict markers:
    ```
-   <<<<<<< HEAD
-   // Client's version
-   =======
-   // Core's version
-   >>>>>>> core/main
-   ```
-
-3. **Decide what to keep:**
-   - For **shared code files**: Usually keep the core's version (bottom section)
-   - For **site.ts or brand assets**: Should never conflict (protected by `.gitattributes`)
-   - For **genuine conflicts**: Merge both changes intelligently
-
-4. **Remove the markers and save:**
-   Edit the file to remove `<<<<<<<`, `=======`, and `>>>>>>>` lines, keeping only the final merged content.
-
-5. **Mark as resolved:**
-   ```bash
-   git add src/path/to/resolved-file.ts
-   ```
-
-6. **Complete the merge:**
-   ```bash
-   git commit
-   ```
-
-7. **Verify the build:**
-   ```bash
-   npm install
-   npm run build
-   npm run dev
-   ```
-
-### Abort a Merge
-
-If you want to cancel and try again:
-```bash
-git merge --abort
-```
-
----
-
-## Special Cases
-
-### First Update from Template Repos
-
-If a client repo was created using "Use this template" on GitHub, it will have **unrelated history** from the core. The first update will automatically handle this with `--allow-unrelated-histories`. You'll see a message like:
-
-```
-📝 Detected unrelated histories (common for template-based repos).
-   Will use --allow-unrelated-histories for this merge.
-```
-
-This is expected and handled automatically. Subsequent updates won't have this issue.
-
-### Migrating Older Client Repos
-
-If you have an older client site (like `tp-amicicoffee` or `tp-fishydelishy`) that was built **before** the config-driven system existed, you'll need to migrate it first:
-
-1. **Back up the repo:**
-   ```bash
-   git checkout -b backup-before-migration
-   git push origin backup-before-migration
-   ```
-
-2. **Create the config file:**
-   - Copy `src/config/site.ts` from the core
-   - Extract all client-specific values from hardcoded spots
-   - Fill in the `siteConfig` object
-
-3. **Create brand directory:**
-   ```bash
-   mkdir -p public/brand
-   # Move existing logo, favicon, etc. into public/brand/
-   ```
-
-4. **Add `.gitattributes`:**
-   Copy from the core repo.
-
-5. **Update imports:**
-   Search the codebase for any hardcoded values and replace with:
-   ```typescript
-   import { siteConfig } from '@/config/site';
-   // Then use: siteConfig.name, siteConfig.brand.logo, etc.
-   ```
-
-6. **Test thoroughly:**
-   ```bash
-   npm run dev
-   ```
-
-7. **Commit the migration:**
-   ```bash
-   git add .
-   git commit -m "Migrate to config-driven structure"
-   git push origin main
-   ```
-
-8. **Link to core:**
-   ```bash
-   bash scripts/link-to-core.sh
-   ```
-
-Now the client can receive updates normally.
-
----
-
-## Best Practices
-
-### ✅ DO:
-- Build new features in the **core** ([tp-core](https://github.com/RichardHubbert/tp-core))
-- Keep client-specific values in `src/config/site.ts`
+      // Client's version
+   - Keep client-specific values in `src/config/site.ts`
 - Use the config throughout the codebase: `import { siteConfig } from '@/config/site'`
 - Test updates in a local client repo before pushing to production
 - Document breaking changes when updating the `site.ts` schema
@@ -278,7 +169,7 @@ This should have been set by `link-to-core.sh`, but double-check.
 ### Need to update the core URL
 Edit `scripts/link-to-core.sh` and change `CORE_REPO_URL`, then:
 ```bash
-git remote set-url core https://github.com/RichardHubbert/new-repo-name.git
+git remote set-url core https://github.com/RichardHubbert/tp-core.git
 ```
 
 ---
@@ -298,9 +189,9 @@ git push origin main
 ```
 
 ### Building New Features
-1. Develop in `tp-woodman` (core)
+1. Develop in `tp-core` (this repo)
 2. Merge to `main`
-3. For each client: `npm run update-from-core`
+3. For each client (including tp-woodman): `npm run update-from-core`
 4. Test and deploy
 
 ---
