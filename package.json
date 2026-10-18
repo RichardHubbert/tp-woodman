@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "new-client": "node scripts/setup-new-client.js"
+    "new-client": "node scripts/setup-new-client.js",
+    "update-from-core": "bash scripts/update-from-core.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

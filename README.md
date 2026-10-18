@@ -105,6 +105,7 @@ tp-woodman/
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 - `npm run new-client` - Interactive setup wizard for new clients
+- `npm run update-from-core` - Pull updates from upstream core (for client repos)
 
 ## 🏗️ Architecture
 
@@ -216,6 +217,20 @@ This codebase is designed to be easily duplicated for multiple restaurant client
 - tp-amicicoffee (Amici Coffee)
 - tp-fishydelishy (Fishy Delishy)
 
+### 🔄 Upstream Core Architecture
+
+This repository serves as the **upstream core** for all client sites. New features and bug fixes can be pushed to all clients while preserving their specific configurations.
+
+**Key files for multi-client workflow:**
+- `src/config/site.ts` - Client configuration (protected from merges)
+- `public/brand/` - Brand assets (protected from merges)
+- `.gitattributes` - Merge protection rules
+- `scripts/link-to-core.sh` - Connect a client repo to this core (one-time)
+- `scripts/update-from-core.sh` - Pull updates from core to client (recurring)
+
+**For client setup:** See [CLONING.md](./CLONING.md)  
+**For rolling out updates:** See [UPDATING.md](./UPDATING.md)
+
 ## 📝 Making Changes
 
 ### Adding a New Feature
@@ -257,6 +272,7 @@ This codebase is designed to be easily duplicated for multiple restaurant client
 ## 📚 Documentation
 
 - [CLONING.md](./CLONING.md) - Complete guide for duplicating this site
+- [UPDATING.md](./UPDATING.md) - Guide for rolling out updates to client sites
 - [.env.example](./.env.example) - Environment variables reference
 - [CRM_INTEGRATION_SETUP.md](./CRM_INTEGRATION_SETUP.md) - CRM integration guide
 

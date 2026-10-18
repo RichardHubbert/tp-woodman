@@ -268,6 +268,18 @@ Before going live, ensure:
 
 ---
 
+## 🔄 Updating from Core
+
+After initial setup, your client site can receive updates from the upstream core repository. This allows new features and bug fixes to be rolled out to all client sites while preserving each client's specific configuration and branding.
+
+**See [UPDATING.md](./UPDATING.md) for complete instructions on:**
+- How to link your client repo to the upstream core
+- Pulling updates with `npm run update-from-core`
+- Handling merge conflicts
+- Best practices for the multi-client architecture
+
+---
+
 ## 🔗 Helpful Resources
 
 - [Supabase Documentation](https://supabase.com/docs)
