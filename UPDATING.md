@@ -1,12 +1,12 @@
 # Updating Client Sites from Core
 
-This guide explains how to push new features, bug fixes, and improvements from the **upstream core** (tp-core) to individual client restaurant sites.
+This guide explains how to push new features, bug fixes, and improvements from the **upstream core** ([tp-core](https://github.com/RichardHubbert/tp-core)) to individual client restaurant sites.
 
 ## Overview
 
-The tp-core repository serves as the **single source of truth** for all shared functionality. When you build a new feature or fix a bug here, you can roll it out to all client sites with one command.
+The [tp-core](https://github.com/RichardHubbert/tp-core) repository serves as the **single source of truth** for all shared functionality. When you build a new feature or fix a bug in tp-core, you can roll it out to all client sites (including tp-woodman) with one command.
 
-**Key Principle:** Client-specific values (restaurant names, colors, contact info, brand assets) live in `src/config/site.ts` and `public/brand/`. Everything else is shared code that gets updated from this core repository.
+**Key Principle:** Client-specific values (restaurant names, colors, contact info, brand assets) live in `src/config/site.ts` and `public/brand/`. Everything else is shared code that gets updated from the tp-core repository.
 
 ---
 
@@ -14,7 +14,7 @@ The tp-core repository serves as the **single source of truth** for all shared f
 
 ### 1. Develop in the Core Repository
 
-Work on new features in `tp-core` (this repo):
+Work on new features in [tp-core](https://github.com/RichardHubbert/tp-core):
 
 ```bash
 cd tp-core
@@ -41,7 +41,7 @@ For each client repository (e.g., `tp-woodman`, `tp-amicicoffee`, `tp-fishydelis
 
 ```bash
 # Navigate to the client repo
-cd /path/to/tp-amicicoffee
+cd /path/to/tp-woodman
 
 # Pull updates from core
 npm run update-from-core
@@ -101,117 +101,8 @@ If `npm run update-from-core` reports conflicts:
 2. **Open each conflicted file:**
    Look for conflict markers:
    ```
-   <<<<<<< HEAD
-   // Client's version
-   =======
-   // Core's version
-   >>>>>>> core/main
-   ```
-
-3. **Decide what to keep:**
-   - For **shared code files**: Usually keep the core's version (bottom section)
-   - For **site.ts or brand assets**: Should never conflict (protected by `.gitattributes`)
-   - For **genuine conflicts**: Merge both changes intelligently
-
-4. **Remove the markers and save:**
-   Edit the file to remove `<<<<<<<`, `=======`, and `>>>>>>>` lines, keeping only the final merged content.
-
-5. **Mark as resolved:**
-   ```bash
-   git add src/path/to/resolved-file.ts
-   ```
-
-6. **Complete the merge:**
-   ```bash
-   git commit
-   ```
-
-7. **Verify the build:**
-   ```bash
-   npm install
-   npm run build
-   npm run dev
-   ```
-
-### Abort a Merge
-
-If you want to cancel and try again:
-```bash
-git merge --abort
-```
-
----
-
-## Special Cases
-
-### First Update from Template Repos
-
-If a client repo was created using "Use this template" on GitHub, it will have **unrelated history** from the core. The first update will automatically handle this with `--allow-unrelated-histories`. You'll see a message like:
-
-```
-📝 Detected unrelated histories (common for template-based repos).
-   Will use --allow-unrelated-histories for this merge.
-```
-
-This is expected and handled automatically. Subsequent updates won't have this issue.
-
-### Migrating Older Client Repos
-
-If you have an older client site (like `tp-amicicoffee` or `tp-fishydelishy`) that was built **before** the config-driven system existed, you'll need to migrate it first:
-
-1. **Back up the repo:**
-   ```bash
-   git checkout -b backup-before-migration
-   git push origin backup-before-migration
-   ```
-
-2. **Create the config file:**
-   - Copy `src/config/site.ts` from the core
-   - Extract all client-specific values from hardcoded spots
-   - Fill in the `siteConfig` object
-
-3. **Create brand directory:**
-   ```bash
-   mkdir -p public/brand
-   # Move existing logo, favicon, etc. into public/brand/
-   ```
-
-4. **Add `.gitattributes`:**
-   Copy from the core repo.
-
-5. **Update imports:**
-   Search the codebase for any hardcoded values and replace with:
-   ```typescript
-   import { siteConfig } from '@/config/site';
-   // Then use: siteConfig.name, siteConfig.brand.logo, etc.
-   ```
-
-6. **Test thoroughly:**
-   ```bash
-   npm run dev
-   ```
-
-7. **Commit the migration:**
-   ```bash
-   git add .
-   git commit -m "Migrate to config-driven structure"
-   git push origin main
-   ```
-
-8. **Link to core:**
-   ```bash
-   bash scripts/link-to-core.sh
-   ```
-
-Now the client can receive updates normally.
-
----
-
-## Best Practices
-
-### ✅ DO:
-- Build new features in the **core** (`tp-core`)
-- Keep client-specific values in `src/config/site.ts`
+      // Client's version
+   - Keep client-specific values in `src/config/site.ts`
 - Use the config throughout the codebase: `import { siteConfig } from '@/config/site'`
 - Test updates in a local client repo before pushing to production
 - Document breaking changes when updating the `site.ts` schema
@@ -228,9 +119,22 @@ Now the client can receive updates normally.
 
 ---
 
-## Core Repository
+## Core Repository Structure
 
-The `tp-core` repository at https://github.com/RichardHubbert/tp-core is the neutral upstream template that all client sites derive from. It contains no client-specific branding or configuration.
+The [tp-core](https://github.com/RichardHubbert/tp-core) repository is the neutral upstream containing all shared functionality. Client repositories like tp-woodman (serving Woodman and Olive brands) pull updates from tp-core while maintaining their own branding and configuration.
+
+### Updating Core Remote URL:
+
+If the core repository URL changes:
+
+1. **Update `scripts/link-to-core.sh`:**
+   Change the `CORE_REPO_URL` variable to the new URL.
+
+2. **Update client repos:**
+   In each client, run:
+   ```bash
+   git remote set-url core https://github.com/RichardHubbert/NEW-REPO-URL.git
+   ```
 
 ---
 

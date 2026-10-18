@@ -1,6 +1,6 @@
 # 🔄 Cloning This Site for a New Client
 
-This guide walks you through duplicating this Table Pilot app for a new restaurant or business. The process has been streamlined so you only need to edit **one config file** and swap out a few assets.
+This is a **client repository** of the [tp-core](https://github.com/RichardHubbert/tp-core) upstream. This guide walks you through duplicating this Table Pilot app for a new restaurant or business. The process has been streamlined so you only need to edit **one config file** and swap out a few assets.
 
 ## ✅ Prerequisites
 
@@ -270,10 +270,10 @@ Before going live, ensure:
 
 ## 🔄 Updating from Core
 
-After initial setup, your client site can receive updates from the upstream core repository. This allows new features and bug fixes to be rolled out to all client sites while preserving each client's specific configuration and branding.
+After initial setup, your client site can receive updates from the upstream [tp-core](https://github.com/RichardHubbert/tp-core) repository. This allows new features and bug fixes to be rolled out to all client sites while preserving each client's specific configuration and branding.
 
 **See [UPDATING.md](./UPDATING.md) for complete instructions on:**
-- How to link your client repo to the upstream core
+- How to link your client repo to the upstream tp-core
 - Pulling updates with `npm run update-from-core`
 - Handling merge conflicts
 - Best practices for the multi-client architecture
