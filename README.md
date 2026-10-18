@@ -1,6 +1,6 @@
-# Table Pilot Pro - Configurable Restaurant Booking System
+# Table Pilot Pro - Woodman and Olive (Client)
 
-A modern, easily cloneable restaurant table booking application built with React, TypeScript, Supabase, and Tailwind CSS.
+A modern restaurant table booking application built with React, TypeScript, Supabase, and Tailwind CSS. This is a **client repository** of the [tp-core](https://github.com/RichardHubbert/tp-core) upstream, configured for the Woodman and Olive brands.
 
 ## 🌟 Key Features
 
@@ -39,7 +39,7 @@ Everything client-specific is now in **one file**: `src/config/site.ts`
 - ✅ Feature copy and messaging
 - ✅ Email sender configuration
 
-**Current site**: Woodman and Olive
+**Current site**: Woodman and Olive (client of [tp-core](https://github.com/RichardHubbert/tp-core))
 
 ## 📁 Project Structure
 
@@ -212,21 +212,21 @@ This codebase is designed to be easily duplicated for multiple restaurant client
 - Their own Supabase project
 - Their own deployment
 
-**Example sites using this template:**
-- tp-woodman (Woodman and Olive)
+**Example client sites of tp-core:**
+- tp-woodman (Woodman and Olive) - this repository
 - tp-amicicoffee (Amici Coffee)
 - tp-fishydelishy (Fishy Delishy)
 
-### 🔄 Upstream Core Architecture
+### 🔄 Client of tp-core
 
-This repository serves as the **upstream core** for all client sites. New features and bug fixes can be pushed to all clients while preserving their specific configurations.
+This repository is a **client** of the [tp-core](https://github.com/RichardHubbert/tp-core) upstream. New features and bug fixes from tp-core can be pulled into this client while preserving Woodman and Olive's specific configuration and branding.
 
 **Key files for multi-client workflow:**
 - `src/config/site.ts` - Client configuration (protected from merges)
 - `public/brand/` - Brand assets (protected from merges)
 - `.gitattributes` - Merge protection rules
-- `scripts/link-to-core.sh` - Connect a client repo to this core (one-time)
-- `scripts/update-from-core.sh` - Pull updates from core to client (recurring)
+- `scripts/link-to-core.sh` - Connect a client repo to tp-core (one-time)
+- `scripts/update-from-core.sh` - Pull updates from tp-core to this client (recurring)
 
 **For client setup:** See [CLONING.md](./CLONING.md)  
 **For rolling out updates:** See [UPDATING.md](./UPDATING.md)
