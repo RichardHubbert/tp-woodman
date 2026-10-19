@@ -19,6 +19,9 @@ export const siteConfig = {
     logoText: "TP",
     // Optional: tagline or description
     tagline: "Restaurant Table Bookings",
+    // TODO: Set the restaurant ID from your Supabase database for this specific site
+    // This scopes admin queries to only show data for this restaurant
+    restaurantId: "", // REQUIRED: Update with your restaurant's UUID from the restaurants table
   },
 
   // ============================================
@@ -50,6 +53,7 @@ export const siteConfig = {
   // CONTACT & LOCATION
   // ============================================
   contact: {
+    // TODO: Update these placeholders with actual contact information
     phone: "",  // Optional: Default phone (can be overridden per-restaurant in database)
     email: "",  // Optional: Default email (can be overridden per-restaurant in database)
     address: "Address to be confirmed",  // Optional: Default address
@@ -60,7 +64,13 @@ export const siteConfig = {
   // ============================================
   hours: {
     display: "Daily: 11:00 AM - 10:00 PM",
-    lastBooking: "7:30 PM",
+    // Opening hour in 24h format (e.g., "11:00" for 11 AM)
+    openingTime: "11:00",
+    // Closing hour in 24h format (e.g., "22:00" for 10 PM)
+    closingTime: "22:00",
+    // Last booking time in 24h format (e.g., "19:30" for 7:30 PM)
+    // This should account for typical meal duration (2.5 hours)
+    lastBooking: "19:30",
     // Optional: Add structured hours for future use
     // schedule: {
     //   monday: { open: "11:00", close: "22:00" },

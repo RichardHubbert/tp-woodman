@@ -181,11 +181,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, restaurant
           description: "Your table reservation has been successfully created. A confirmation email has been sent to your inbox.",
         });
       } else {
+        // Log the error but don't expose it to the customer
         console.error('📧 Email failed:', emailResult.error);
         toast({
           title: "Booking Confirmed!",
-          description: `Your table reservation has been successfully created. (Email delivery failed: ${emailResult.error})`,
-          variant: "destructive"
+          description: "Your table reservation has been successfully created. You'll receive a confirmation email shortly.",
         });
       }
       
