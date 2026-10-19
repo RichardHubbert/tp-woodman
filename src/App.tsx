@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RestaurantProvider } from "@/contexts/RestaurantContext";
 import { siteConfig } from "@/config/site";
+import AdminGuard from "@/components/AdminGuard";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
@@ -38,9 +39,9 @@ const App = () => (
           <BrowserRouter basename={getBasename()}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/restaurants" element={<RestaurantManagement />} />
-              <Route path="/users" element={<UserManagement />} />
+              <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
+              <Route path="/restaurants" element={<AdminGuard><RestaurantManagement /></AdminGuard>} />
+              <Route path="/users" element={<AdminGuard><UserManagement /></AdminGuard>} />
               <Route path="/auth" element={<Auth />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

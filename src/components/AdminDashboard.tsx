@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, isSameDay } from 'date-fns';
-import { Calendar, Users, Clock, MapPin, Phone, Mail, Building2 } from 'lucide-react';
+import { Calendar, Users, Clock, MapPin, Phone, Mail, Building2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +13,8 @@ import { testEmailService } from '@/services/emailService';
 import CRMTestButton from '@/components/CRMTestButton';
 import NewCustomerCRMTestButton from '@/components/NewCustomerCRMTestButton';
 import DashboardRestaurants from '@/components/DashboardRestaurants';
+import { siteConfig } from '@/config/site';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AdminDashboard = () => {
   const { isAdmin } = useAdmin();
@@ -31,6 +33,9 @@ const AdminDashboard = () => {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [emailTestResult, setEmailTestResult] = useState<string | null>(null);
+  
+  // Get the restaurant ID from site config
+  const siteRestaurantId = siteConfig.business.restaurantId;
 
   useEffect(() => {
     const loadData = async () => {
@@ -59,11 +64,15 @@ const AdminDashboard = () => {
     loadData();
   }, []);
 
-  // Get filtered bookings based on selected county and restaurant
+  // Get filtered bookings based on selected county and restaurant, and site restaurant ID
   const getFilteredBookings = () => {
     let filtered = allBookings;
 
-    if (selectedCounty) {
+    // If site has a configured restaurant ID, always filter to that restaurant only
+    if (siteRestaurantId) {
+      filtered = filtered.filter(booking => booking.restaurant_id === siteRestaurantId);
+    } else if (selectedCounty) {
+      // Fallback: filter by county if no site restaurant ID is set
       filtered = filtered.filter(booking => {
         const restaurant = restaurants.find(r => r.id === booking.restaurant_id);
         return restaurant?.county === selectedCounty;
@@ -187,6 +196,19 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6 p-4">
+        {/* Configuration Warning */}
+        {!siteRestaurantId && (
+          <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Configuration Required</AlertTitle>
+            <AlertDescription>
+              <strong>Security Warning:</strong> The <code>restaurantId</code> is not set in <code>src/config/site.ts</code>.
+              <br />
+              This dashboard will show bookings from ALL restaurants. Please update the config with your restaurant's UUID from the database.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {/* Date Selector */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { format, addMinutes, isSameDay } from 'date-fns';
 import { sendCustomerToCRM } from './crmService';
+import { siteConfig } from '@/config/site';
 
 export interface Table {
   id: string;
@@ -74,16 +75,24 @@ export const fetchBookingsForDate = async (date: Date): Promise<Booking[]> => {
   }));
 };
 
-// Generate time slots from 11:00 AM to 7:30 PM (every 30 minutes)
+// Generate time slots based on config opening hours and last booking time (every 30 minutes)
 export const generateTimeSlots = (): string[] => {
   const slots: string[] = [];
-  const startHour = 11; // 11 AM
-  const endHour = 19; // 7 PM
-  const endMinute = 30; // 7:30 PM
+  const { openingTime, lastBooking } = siteConfig.hours;
+  
+  // Parse opening time (e.g., "11:00" -> hour: 11, minute: 0)
+  const [startHour, startMinute] = openingTime.split(':').map(Number);
+  
+  // Parse last booking time (e.g., "19:30" -> hour: 19, minute: 30)
+  const [endHour, endMinute] = lastBooking.split(':').map(Number);
 
+  // Generate slots from opening time to last booking time
   for (let hour = startHour; hour <= endHour; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
+      // Skip if we're past the last booking time
       if (hour === endHour && minute > endMinute) break;
+      // Skip if we're before the opening minute on the opening hour
+      if (hour === startHour && minute < startMinute) continue;
       
       const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       slots.push(timeString);

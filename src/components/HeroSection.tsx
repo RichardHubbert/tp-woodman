@@ -29,6 +29,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onBookTable, restaurantName =
             {siteConfig.features.hero.welcome}{' '}
             <span className={hasImage ? `text-${primary}-${siteConfig.branding.colors.light}` : `text-${primary}-${siteConfig.branding.colors.primaryShade}`}>{restaurantName}</span>
           </h1>
+          {siteConfig.business.tagline && (
+            <p className={`text-2xl font-semibold mb-4 ${hasImage ? 'text-white/95' : `text-${primary}-${siteConfig.branding.colors.primaryShade}`}`}>
+              {siteConfig.business.tagline}
+            </p>
+          )}
           <p className={`text-xl mb-8 max-w-3xl mx-auto ${hasImage ? 'text-white/90' : 'text-gray-600'}`}>
             {replaceTokens(siteConfig.features.hero.subtitle, { name: restaurantName })}
           </p>
