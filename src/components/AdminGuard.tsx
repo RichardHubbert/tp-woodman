@@ -25,26 +25,17 @@ const AdminGuard = ({ children }: AdminGuardProps) => {
       }
 
       try {
-        // Check if user has admin role in profiles table
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
+        // Use the tp_is_admin() RPC function to check admin status
+        const { data: isAdminResult, error } = await supabase.rpc('tp_is_admin');
 
         if (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('Error checking admin status:', error);
           setIsAdmin(false);
           setChecking(false);
           return;
         }
 
-        // Only allow users with 'admin' role
-        if (profile?.role === 'admin') {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
+        setIsAdmin(isAdminResult === true);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);

@@ -4,6 +4,8 @@
 
 After merging this PR, you **MUST** run this SQL migration in Supabase to apply the security fixes.
 
+**IMPORTANT**: This is a combined security migration that covers multiple security fixes across all TablePilot sites. It should be run **ONCE** on the shared Supabase project.
+
 ### Method 1: Supabase CLI (Recommended)
 
 ```bash
@@ -23,181 +25,69 @@ If you don't have the Supabase CLI installed, run this SQL manually in Supabase 
 
 **Copy and paste the entire contents of this file**: `supabase/migrations/20261019000000_tighten_security_rls.sql`
 
-Or run this SQL directly:
+This combined migration file:
+- Replaces overly permissive RLS policies
+- Creates the `tp_is_admin()` RPC function for admin checks
+- Creates the `get_booking_availability()` RPC function for public availability queries
+- Protects profile privileges with a trigger
+- Secures storage bucket policies
+- Makes Richard Hubbert (richardhubbert@gmail.com) an admin automatically
+- Is idempotent (safe to run multiple times)
 
-```sql
--- ============================================
--- Security Fix: Tighten Row Level Security policies
--- ============================================
+---
 
--- 1. Drop existing overly permissive booking policies
-DROP POLICY IF EXISTS "Bookings are viewable by everyone" ON bookings;
-DROP POLICY IF EXISTS "Bookings are viewable by business admin" ON bookings;
-DROP POLICY IF EXISTS "Authenticated users can create bookings" ON bookings;
-DROP POLICY IF EXISTS "Bookings are manageable by admin" ON bookings;
+## What This Migration Does
 
--- 2. Create strict booking policies
-CREATE POLICY "Anonymous users can create bookings" ON bookings
-  FOR INSERT TO anon WITH CHECK (true);
+### Core Security Improvements
 
-CREATE POLICY "Admin users can view all bookings" ON bookings
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+1. **Admin Helper Function**: Creates `tp_is_admin()` RPC that safely checks if the current user has admin role
+2. **Public Availability Function**: Creates `get_booking_availability(p_date, p_restaurant_id)` RPC that returns booking slots without exposing customer details (names, emails, phones)
+3. **Profile Protection**: Adds trigger to prevent users from making themselves admin
+4. **Drops ALL Existing Policies**: Removes all old, potentially insecure policies and replaces with known-good set
 
-CREATE POLICY "Admin users can update bookings" ON bookings
-  FOR UPDATE TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+### New RLS Policy Set
 
-CREATE POLICY "Admin users can delete bookings" ON bookings
-  FOR DELETE TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+**Bookings**:
+- ❌ **Before**: Anyone could view all bookings (including customer emails, phones)
+- ✅ **After**: Public can INSERT bookings; only admins can view/update/delete
+- ✅ Availability checks use `get_booking_availability()` RPC (no customer data exposed)
 
--- 3. Tighten restaurant policies
-DROP POLICY IF EXISTS "Restaurants are viewable by everyone" ON restaurants;
-DROP POLICY IF EXISTS "Restaurants are manageable by admin" ON restaurants;
+**Restaurants**:
+- ✅ Public can view active restaurants
+- ✅ Only admins can manage all restaurants
 
-CREATE POLICY "Public can view active restaurants" ON restaurants
-  FOR SELECT TO anon, authenticated
-  USING (is_active = true);
+**Tables**:
+- ✅ Public can view tables (needed for availability checks)
+- ✅ Only admins can manage tables
 
-CREATE POLICY "Admin users can manage restaurants" ON restaurants
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+**Profiles**:
+- ✅ Users can view/edit their own profile
+- ✅ Only admins can view all profiles and change roles
+- ✅ Trigger prevents users from making themselves admin
 
--- 4. Secure tables
-ALTER TABLE IF EXISTS tables ENABLE ROW LEVEL SECURITY;
+**Businesses & Customers**:
+- ✅ Admin-only access
 
-DROP POLICY IF EXISTS "Tables are viewable by everyone" ON tables;
-DROP POLICY IF EXISTS "Tables are manageable by admin" ON tables;
+**Storage (restaurants bucket)**:
+- ✅ Anyone can view images
+- ✅ Only admins can upload/update/delete images
 
-CREATE POLICY "Public can view tables" ON tables
-  FOR SELECT TO anon, authenticated
-  USING (true);
+---
 
-CREATE POLICY "Admin users can manage tables" ON tables
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+## Code Changes Already Applied
 
--- 5. Secure profiles
-DROP POLICY IF EXISTS "Profiles are viewable by owner" ON profiles;
-DROP POLICY IF EXISTS "Profiles are viewable by business admin" ON profiles;
+The following code changes have been made to work with the new RLS policies:
 
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Admin users can view all profiles" ON profiles
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.user_id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
-
-CREATE POLICY "Admin users can manage profiles" ON profiles
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.user_id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
-
--- 6. Secure businesses
-DROP POLICY IF EXISTS "Businesses are viewable by authenticated users" ON businesses;
-DROP POLICY IF EXISTS "Businesses are manageable by admin" ON businesses;
-DROP POLICY IF EXISTS "Businesses are manageable by business admin" ON businesses;
-
-CREATE POLICY "Admin users can view businesses" ON businesses
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
-
-CREATE POLICY "Admin users can manage businesses" ON businesses
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
-
--- 7. Secure customers
-DROP POLICY IF EXISTS "Customers are viewable by business admin" ON customers;
-DROP POLICY IF EXISTS "Customers are manageable by business admin" ON customers;
-
-CREATE POLICY "Admin users can view customers" ON customers
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
-
-CREATE POLICY "Admin users can manage customers" ON customers
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
-```
+1. **`fetchBookingsForDate`**: Now uses `supabase.rpc('get_booking_availability')` instead of direct SELECT
+2. **`createBooking`**: Generates ID with `crypto.randomUUID()`, inserts without `.select()`, builds returned booking locally
+3. **Admin checks**: Use `tp_is_admin()` RPC instead of direct profile queries
+4. **No hard-coded IDs**: Uses config business IDs instead of hard-coded values
 
 ---
 
 ## Grant Admin Access to Users
 
-After running the migration, grant admin access to authorized users:
+The migration automatically makes richardhubbert@gmail.com an admin. To grant admin access to other users:
 
 ```sql
 -- Replace 'admin@example.com' with the actual admin user's email
@@ -217,57 +107,41 @@ Repeat this for each user who should have admin access.
 After running the migration, verify it worked:
 
 ```sql
+-- Check that the RPC functions exist
+SELECT routine_name, routine_type 
+FROM information_schema.routines 
+WHERE routine_schema = 'public' 
+  AND routine_name IN ('tp_is_admin', 'get_booking_availability');
+
 -- Check that policies were created
-SELECT schemaname, tablename, policyname 
+SELECT tablename, policyname 
 FROM pg_policies 
-WHERE tablename IN ('bookings', 'restaurants', 'tables', 'profiles', 'businesses', 'customers')
+WHERE schemaname = 'public'
+  AND policyname LIKE 'tp_%'
 ORDER BY tablename, policyname;
 
--- You should see policies like:
--- - "Anonymous users can create bookings"
--- - "Admin users can view all bookings"
--- - "Public can view active restaurants"
--- etc.
+-- Check admin users
+SELECT u.email, p.role
+FROM auth.users u
+JOIN profiles p ON p.user_id = u.id
+WHERE p.role = 'admin';
 ```
-
----
-
-## What This Migration Does
-
-### Bookings Table
-- ❌ **Before**: Anyone could view all bookings (including guest emails, phone numbers)
-- ✅ **After**: Only users with `role = 'admin'` can view bookings
-- ✅ Anonymous users can still INSERT bookings (for customer booking form)
-
-### Restaurants Table
-- ❌ **Before**: Policies were inconsistent
-- ✅ **After**: Anonymous users can view active restaurants (public info)
-- ✅ Only admins can create/update/delete restaurants
-
-### Tables, Profiles, Businesses, Customers
-- ❌ **Before**: Overly permissive or missing policies
-- ✅ **After**: Only admin users can manage these resources
-- ✅ Tables remain publicly viewable (needed for availability checks)
 
 ---
 
 ## Testing After Migration
 
 ### Test 1: Admin Access Works
-```sql
--- As an admin user, you should be able to query bookings
-SELECT * FROM bookings LIMIT 5;
-```
+Log in as admin user and access `/admin` - should work
 
 ### Test 2: Non-Admin Access Blocked
-Log in as a non-admin user and try:
-```sql
--- This should fail with "permission denied"
-SELECT * FROM bookings LIMIT 5;
-```
+Log in as non-admin user and try `/admin` - should see "Access Denied"
 
 ### Test 3: Customer Bookings Still Work
-As an anonymous user (not logged in), the booking form should still work on the website.
+As anonymous user (not logged in), create a booking - should work without errors
+
+### Test 4: Availability Check Works
+On booking page, select a date - available time slots should appear
 
 ---
 
@@ -275,14 +149,7 @@ As an anonymous user (not logged in), the booking form should still work on the 
 
 If you need to rollback these security changes (NOT RECOMMENDED):
 
-```sql
--- WARNING: This restores the security vulnerability!
-DROP POLICY IF EXISTS "Anonymous users can create bookings" ON bookings;
-DROP POLICY IF EXISTS "Admin users can view all bookings" ON bookings;
-
-CREATE POLICY "Bookings are viewable by everyone" ON bookings
-  FOR SELECT USING (true);
-```
+This migration is idempotent - you can run it again to restore the secure state. There is no partial rollback; contact support if you need to revert.
 
 ---
 
@@ -290,6 +157,6 @@ CREATE POLICY "Bookings are viewable by everyone" ON bookings
 
 If you encounter issues:
 1. Check Supabase logs: Dashboard → Logs → Database
-2. Verify user has `role = 'admin'` in profiles table
-3. Check for error messages in browser console
+2. Verify migration completed without errors
+3. Check browser console for RPC call errors
 4. Refer to `SECURITY_SETUP.md` for detailed troubleshooting

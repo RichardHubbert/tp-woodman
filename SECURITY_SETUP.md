@@ -16,7 +16,9 @@ This branch implements essential security fixes to prevent unauthorized access t
 
 ## Required Database Migration
 
-**CRITICAL**: You must run the following SQL migration in your Supabase SQL editor:
+**CRITICAL**: You must run the combined security SQL migration in your Supabase SQL editor.
+
+This is a **combined security migration** that covers all TablePilot sites and should be run **ONCE** on the shared Supabase project.
 
 ### Option 1: Run Migration via Supabase CLI (Recommended)
 
@@ -30,14 +32,19 @@ If you don't have the Supabase CLI, open the Supabase Dashboard → SQL Editor a
 
 **File**: `supabase/migrations/20261019000000_tighten_security_rls.sql`
 
-This migration:
+This combined migration:
 - Drops overly permissive RLS policies that allowed anyone to view bookings
+- Creates `tp_is_admin()` RPC function for secure admin checks
+- Creates `get_booking_availability(p_date, p_restaurant_id)` RPC for public availability queries (no customer data exposure)
 - Creates strict policies where:
   - Anonymous users can ONLY insert bookings (for customer booking form)
   - Anonymous users can ONLY read active restaurants (public info)
   - Only authenticated admin users can view/update/delete bookings
   - Only authenticated admin users can manage restaurants, businesses, customers, and profiles
 - Secures tables, profiles, businesses, and customers with proper admin-only access
+- Protects profile privileges with a trigger (users can't make themselves admin)
+- Secures storage bucket for restaurant images
+- Automatically makes richardhubbert@gmail.com an admin
 
 **Security Impact**: After running this migration, the admin dashboard will only be accessible to users with `role = 'admin'` in the `profiles` table.
 
@@ -108,6 +115,8 @@ contact: {
 ## How to Grant Admin Access to Users
 
 After running the migration, users need the `admin` role in the `profiles` table to access the admin dashboard.
+
+**Note**: The migration automatically makes richardhubbert@gmail.com an admin if that user exists.
 
 ### Grant Admin Access via SQL
 
@@ -204,10 +213,11 @@ If you encounter issues:
 
 ## Summary of Files Changed
 
-- ✅ `src/components/AdminGuard.tsx` (new) - Route guard for admin pages
+- ✅ `src/components/AdminGuard.tsx` - Route guard using `tp_is_admin()` RPC
 - ✅ `src/App.tsx` - Wrapped admin routes with AdminGuard
 - ✅ `src/config/site.ts` - Added restaurantId & structured hours
-- ✅ `src/services/supabaseBookingService.ts` - Dynamic time slot generation
+- ✅ `src/services/supabaseBookingService.ts` - Uses `get_booking_availability()` RPC and local booking object construction
 - ✅ `src/components/HeroSection.tsx` - Show tagline
 - ✅ `src/components/AdminDashboard.tsx` - Scoped to restaurant ID + warning
-- ✅ `supabase/migrations/20261019000000_tighten_security_rls.sql` (new) - Security fixes
+- ✅ `src/hooks/useAdmin.tsx` - Uses `tp_is_admin()` RPC
+- ✅ `supabase/migrations/20261019000000_tighten_security_rls.sql` - Combined security migration with RPC functions
