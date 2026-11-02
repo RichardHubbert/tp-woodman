@@ -28,3 +28,5 @@ supabase/.temp
 *.njsproj
 *.sln
 *.sw?
+# Test pages with keys pasted in
+**/test-frontend.html
